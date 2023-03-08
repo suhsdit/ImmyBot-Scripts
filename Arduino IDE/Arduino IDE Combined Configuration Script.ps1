@@ -1,10 +1,28 @@
 $cliPath = "C:\Program Files\arduino-ide\resources\app\node_modules\arduino-ide-extension\build\arduino-cli.exe"
-$configPath = "C:\Program Files\arduino-ide\Appdata\arduino-cli.yaml"
 $localDataDir = "C:\Program Files\arduino-ide\Appdata\Local\Arduino15"
 $localDownloadsDir = "C:\Program Files\arduino-ide\Appdata\Local\Arduino15\staging"
-$userLibrariesDir = "$env:USERPROFILE\Documents\Arduino"
-$batchFile = 'https://raw.githubusercontent.com/suhsdit/ImmyBot-Scripts/main/Arduino%20IDE/Arduino%20IDE.bat'
-$yamlFile = 'https://raw.githubusercontent.com/suhsdit/ImmyBot-Scripts/main/Arduino%20IDE/arduino-cli.yaml'
+#$userLibrariesDir = "$env:USERPROFILE\Documents\Arduino"
+
+$batchFileUrl = 'https://raw.githubusercontent.com/suhsdit/ImmyBot-Scripts/main/Arduino%20IDE/Arduino%20IDE.bat'
+$batchFilePath = 'C:\Program Files\arduino-ide\Arduino IDE.bat'
+
+$yamlFileUrl = 'https://raw.githubusercontent.com/suhsdit/ImmyBot-Scripts/main/Arduino%20IDE/arduino-cli.yaml'
+$yamlFilePath = "C:\Program Files\arduino-ide\Appdata\arduino-cli.yaml"
+
+
+#Test if config folder exists with proper permissions
+
+
+# Test if yaml file exists in config folder
+
+
+# Check if core boards are installed
+
+
+# Check if Drivers are installed
+
+
+
 
 function Test-ArduinoConfig {
     # Test if the Arduino IDE is properly configured for each user on startup
@@ -34,23 +52,23 @@ function Test-ArduinoConfig {
 }
 
 function Set-ArduinoConfig {
-     # Create and configure hidden folder for Arduino CLI config
-     $folderPath = "C:\Program Files\arduino-ide\Appdata"
-     New-Item $folderPath -ItemType Directory -Force
-     Copy-Item "Appdata\arduino-cli.yaml" -Destination $folderPath -Force
-     icacls $folderPath /grant Everyone:(OI)(CI)M
-     attrib +h $folderPath
+    # Create and configure hidden folder for Arduino CLI config
+    $folderPath = "C:\Program Files\arduino-ide\Appdata"
+    New-Item $folderPath -ItemType Directory -Force
+    Invoke-WebRequest -Uri $yamlFileUrl -OutFile $yamlFilePath -Force
+    icacls $folderPath /grant Everyone:(OI)(CI)M
+    attrib +h $folderPath
 
-     # Install core boards using configuration file
-     & $cliPath core install arduino:avr --config-file $configPath
+    # Install core boards using configuration file
+    & $cliPath core install arduino:avr --config-file $yamlFilePath
 
-     # Configure IDE for each user on startup
-     $batchPath = "$env:ProgramFiles\arduino-ide\arduino-startup.bat"
+    # Configure IDE for each user on startup
+    $batchPath = "$env:ProgramFiles\arduino-ide\arduino-startup.bat"
 
-     New-Item $batchPath -ItemType File -Force $batchFile | Out-File -FilePath $batchPath -Encoding ascii
+    New-Item $batchPath -ItemType File -Force $batchFile | Out-File -FilePath $batchPath -Encoding ascii
 
-     & $batchPath
- }
+    & $batchPath
+}
 
 switch ($method) {
     "test" {

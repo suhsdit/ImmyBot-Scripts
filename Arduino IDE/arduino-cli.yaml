@@ -1,0 +1,4 @@
+directories:
+  data: C:\Program Files\arduino-ide\Appdata\Local\Arduino15
+  downloads: C:\Program Files\arduino-ide\Appdata\Local\Arduino15\staging
+  user: %USERPROFILE%\Documents\Arduino

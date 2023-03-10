@@ -1,9 +1,5 @@
-$cliPath = "C:\Program Files\arduino-ide\resources\app\node_modules\arduino-ide-extension\build\arduino-cli.exe"
-$localDataDir = "C:\Program Files\arduino-ide\Appdata\Local\Arduino15"
-$localDownloadsDir = "C:\Program Files\arduino-ide\Appdata\Local\Arduino15\staging"
-$userLibrariesDir = "C:\ProgramData\Arduino\libraries"
-
 $configFolderPath = "C:\Program Files\arduino-ide\Appdata"
+$cliPath = "C:\Program Files\arduino-ide\resources\app\node_modules\arduino-ide-extension\build\arduino-cli.exe"
 
 $batchFileUrl = 'https://raw.githubusercontent.com/suhsdit/ImmyBot-Scripts/main/Arduino%20IDE/Arduino%20IDE.bat'
 $batchFilePath = 'C:\Program Files\arduino-ide\Arduino IDE.bat'
@@ -11,7 +7,13 @@ $batchFilePath = 'C:\Program Files\arduino-ide\Arduino IDE.bat'
 $yamlFileUrl = 'https://raw.githubusercontent.com/suhsdit/ImmyBot-Scripts/main/Arduino%20IDE/arduino-cli.yaml'
 $yamlFilePath = "C:\Program Files\arduino-ide\Appdata\arduino-cli.yaml"
 
-$certpath = 'https://raw.githubusercontent.com/suhsdit/ImmyBot-Scripts/main/Arduino%20IDE/certs/'
+$certRootUrl = 'https://github.com/suhsdit/ImmyBot-Scripts/raw/main/Arduino%20IDE/certs/'
+$certs = @(
+    'adafruit.cer',
+    'arduinollc.cer',
+    'arduinosa.cer',
+    'arduinosrl.cer'
+)
 
 
 #Test if config folder exists with proper permissions
@@ -30,15 +32,13 @@ if ($configFileExists) {
     Write-Host "X YAML file does not exist in config folder" -ForegroundColor Red
 }
 
-# Check if core boards are installed
-# $coreBoardsInstalled = & $cliPath core list | Select-String -Pattern "arduino:avr"
-# $output = & $cliPath core list
-# Write-Host "Output of core list:`n$output"
-# if ($coreBoardsInstalled) {
-#     Write-Host "Core boards installed"
-# } else {
-#     Write-Host "Core boards not installed"
-# }
+# Check if core boards are installed using & $cliPath core list
+$coreBoardsInstalled = & $cliPath core list | Select-String -Pattern "arduino:avr"
+if ($coreBoardsInstalled) {
+    Write-Host "√ Core boards are installed" -ForegroundColor Green
+} else {
+    Write-Host "X Core boards are not installed" -ForegroundColor Red
+}
 
 # Check if shortcut lnk exists on public desktop
 $originalShortcutExists = Test-Path "$env:PUBLIC\Desktop\Arduino IDE.lnk"
@@ -56,25 +56,48 @@ if ($batchShortcutExists) {
     Write-Host "X Shortcut to batch file does not exist on public desktop" -ForegroundColor Red
 }
 
-# Check if firewall rules are in place
-$FirewallRuleIn = Get-NetFirewallRule -DisplayName "arduino-cli.exe"
-$FirewallRuleOut = Get-NetFirewallRule -DisplayName "arduino-cli.exe"
-if ($FirewallRuleIn.Enabled -and $FirewallRuleOut.Enabled) {
-    Write-Host "√ Windows Defender Firewall allows arduino-cli.exe to access the internet" -ForegroundColor Green
+# Check firewall rule for Arduino IDE UDP inbound
+$ArduinoUDPFirewallruleIn = Get-NetFirewallRule -DisplayName "Arduino IDE UDP inbound"
+if ($ArduinoUDPFirewallruleIn.Enabled) {
+    Write-Host "√ Windows Defender Firewall allows Arduino IDE UDP inbound" -ForegroundColor Green
 } else {
-    Write-Host "X Windows Defender Firewall does not allow arduino-cli.exe to access the internet" -ForegroundColor Red
+    Write-Host "X Windows Defender Firewall does not allow Arduino IDE UDP inbound" -ForegroundColor Red
+}
+
+# Check firewall rule for Arduino IDE TCP inbound
+$ArduinoTCPFirewallruleIn = Get-NetFirewallRule -DisplayName "Arduino IDE TCP inbound"
+if ($ArduinoTCPFirewallruleIn.Enabled) {
+    Write-Host "√ Windows Defender Firewall allows Arduino IDE TCP inbound" -ForegroundColor Green
+} else {
+    Write-Host "X Windows Defender Firewall does not allow Arduino IDE TCP inbound" -ForegroundColor Red
+}
+
+# Check firewall rule for mdns-discovery UDP inbound
+$mdnsUDPFirewallruleIn = Get-NetFirewallRule -DisplayName "mdns-discovery UDP inbound"
+if ($mdnsUDPFirewallruleIn.Enabled) {
+    Write-Host "√ Windows Defender Firewall allows mdns-discovery UDP inbound" -ForegroundColor Green
+} else {
+    Write-Host "X Windows Defender Firewall does not allow mdns-discovery UDP inbound" -ForegroundColor Red
+}
+
+# Check firewall rule for mdns-discovery UDP inbound
+$mdnsTCPFirewallruleIn = Get-NetFirewallRule -DisplayName "mdns-discovery TCP inbound"
+if ($mdnsTCPFirewallruleIn.Enabled) {
+    Write-Host "√ Windows Defender Firewall allows mdns-discovery TCP inbound" -ForegroundColor Green
+} else {
+    Write-Host "X Windows Defender Firewall does not allow mdns-discovery TCP inbound" -ForegroundColor Red
 }
 
 # Check if certificate is installed
-$ArduinoSrlCert = Get-ChildItem -Path Cert:\LocalMachine\TrustedPublisher | Where-Object {$_.Subject -like "*Arduino SRL*"}
-$ArduinoLlcCert = Get-ChildItem -Path Cert:\LocalMachine\TrustedPublisher | Where-Object {$_.Subject -like "*Arduino LLC*"}
-$ArduinoSaCert = Get-ChildItem -Path Cert:\LocalMachine\TrustedPublisher | Where-Object {$_.Subject -like "*Arduino SA*"}
-$AdafruitCert = Get-ChildItem -Path Cert:\LocalMachine\TrustedPublisher | Where-Object {$_.Subject -like "*Adafruit*"}
-if ($ArduinoSrlCert -and $ArduinoLlcCert -and $ArduinoSaCert -and $AdafruitCert) {
-    Write-Host "√ Arduino certificates are installed" -ForegroundColor Green
-} else {
-    Write-Host "X Arduino certificates are not installed" -ForegroundColor Red
-}
+# $ArduinoSrlCert = Get-ChildItem -Path Cert:\LocalMachine\TrustedPublisher | Where-Object {$_.Subject -like "*Arduino SRL*"}
+# $ArduinoLlcCert = Get-ChildItem -Path Cert:\LocalMachine\TrustedPublisher | Where-Object {$_.Subject -like "*Arduino LLC*"}
+# $ArduinoSaCert = Get-ChildItem -Path Cert:\LocalMachine\TrustedPublisher | Where-Object {$_.Subject -like "*Arduino SA*"}
+# $AdafruitCert = Get-ChildItem -Path Cert:\LocalMachine\TrustedPublisher | Where-Object {$_.Subject -like "*Adafruit*"}
+# if ($ArduinoSrlCert -and $ArduinoLlcCert -and $ArduinoSaCert -and $AdafruitCert) {
+#     Write-Host "√ Arduino certificates are installed" -ForegroundColor Green
+# } else {
+#     Write-Host "X Arduino certificates are not installed" -ForegroundColor Red
+# }
 
 
 switch ($method) {
@@ -88,7 +111,11 @@ switch ($method) {
             $coreBoardsInstalled -and
             !$originalShortcutExists -and
             $batchShortcutExists -and
-            $Firewallrule) {
+            #firewall rules
+            $FirewallruleIn.Enabled -and $FirewallruleOut.Enabled -and
+            #certs
+            $ArduinoSrlCert -and $ArduinoLlcCert -and $ArduinoSaCert -and $AdafruitCert
+            ) {
             Write-Host "√ All checks passed" -ForegroundColor Green
             return $true
         } else {
@@ -102,24 +129,29 @@ switch ($method) {
         # If the config folder does not exist, create it and set permissions
         if (-not $configFolderExists) {
             Write-Host "Creating config folder"
-            $folderPath = "C:\Program Files\arduino-ide\Appdata"
-            New-Item $folderPath -ItemType Directory -Force
-            icacls $folderPath /grant Everyone:(OI)(CI)M
-            attrib +h $folderPath
+            New-Item $configFolderPath -ItemType Directory -Force
+            $acl = Get-Acl $configFolderPath
+            $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("Everyone","Modify","ContainerInherit,ObjectInherit","None","Allow")
+            $acl.SetAccessRule($rule)
+            Set-Acl $configFolderPath $acl
+            attrib +h $configFolderPath
         }
-
+        
         # If the yaml file does not exist, download it
         if (-not $configFileExists) {
             Write-Host "Downloading YAML file"
             Invoke-WebRequest -Uri $yamlFileUrl -OutFile $yamlFilePath
-            icacls $yamlFilePath /grant Everyone:(OI)(CI)M
+            $acl = Get-Acl $yamlFilePath
+            $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("Everyone","Modify","ContainerInherit,ObjectInherit","None","Allow")
+            $acl.SetAccessRule($rule)
+            Set-Acl $yamlFilePath $acl
             attrib +h $yamlFilePath
         }
 
         # If the core boards are not installed, install them
         if (-not $coreBoardsInstalled) {
             Write-Host "Installing core boards"
-            start-process -FilePath $cliPath -ArgumentList "core install arduino:avr --config-file $yamlFilePath" -Wait
+            & $cliPath core install arduino:avr --config-file $yamlFilePath
         }
 
         # If the original shortcut exists, delete it
@@ -144,17 +176,40 @@ switch ($method) {
             $shortcut.Save()
         }
 
-        # If Firewall rules are not in place, create them
-        if (-not $FirewallRuleIn.Enabled -and -not $FirewallRuleOut.Enabled) {
-            Write-Host "Creating firewall rule"
-            New-NetFirewallRule -DisplayName "arduino-cli.exe" -Direction Inbound -Action Allow -Program "$cliPath" -Enabled True
-            New-NetFirewallRule -DisplayName "arduino-cli.exe" -Direction Outbound -Action Allow -Program "$cliPath" -Enabled True
-        }
+        # If inbound tcp/udp Firewall rules are not created for Arduino IDE and mdns, create them for each exe
+        # if (-not $ArduinoUDPFirewallruleIn.Enabled -and -not $ArduinoTCPFirewallruleIn.Enabled) {
+        #     Write-Host "Creating inbound and outbound firewall rules for Arduino IDE"
+        #     New-NetFirewallRule -DisplayName "Arduino IDE UDP inbound" -Direction Inbound -Action Allow -Protocol UDP -LocalPort 5000 -Program "C:\Program Files\Arduino-ide\arduino ide.exe"
+        #     New-NetFirewallRule -DisplayName "Arduino IDE TCP inbound" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 5000 -Program "C:\Program Files\Arduino-ide\arduino ide.exe"
+        # }
 
-        # If certificates are not installed, install them
-
+        # if (-not $mdnsUDPFirewallruleIn.Enabled -and -not $mdnsTCPFirewallruleIn.Enabled) {
+        #     Write-Host "Creating inbound firewall rules for mdns-discovery"
+        #     #New-NetFirewallRule -DisplayName "mdns-discovery UDP inbound" -Direction Inbound -Action Allow -Protocol UDP -LocalPort 5353 -Program "$($cliPath.Replace('arduino-cli.exe', 'mdns-discovery.exe'))"
+        #     #New-NetFirewallRule -DisplayName "mdns-discovery TCP inbound" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 5353 -Program "$($cliPath.Replace('arduino-cli.exe', 'mdns-discovery.exe'))"
+        # }
 
         
+
+        # If certificates are not installed, install them
+        if (-not $ArduinoSrlCert -and -not $ArduinoLlcCert -and -not $ArduinoSaCert -and -not $AdafruitCert) {
+            # Copy certs from github to arduino\appdata
+            Write-Host "Downloading certificates"
+            $certPath = "C:\Program Files\arduino-ide\Appdata\certificates"
+            New-Item $certPath -ItemType Directory -Force
+            foreach ($cert in $certs) {
+                $certurl = $CertRootUrl + $cert
+                Write-Host "Downloading $certurl"
+                Invoke-WebRequest -Uri $certurl -OutFile "$certPath\$cert" -verbose
+            }
+
+            # Install certs
+            Write-Host "Installing certificates"
+            foreach ($cert in $certs) {
+                Write-Host "Installing $cert"
+                certutil -addstore -f "TrustedPublisher" "$certPath\$cert"
+            }
+        }
 
         
         return

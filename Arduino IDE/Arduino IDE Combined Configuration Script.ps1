@@ -1,5 +1,6 @@
-$configFolderPath = "C:\Program Files\arduino-ide\Appdata"
-$cliPath = "C:\Program Files\arduino-ide\resources\app\node_modules\arduino-ide-extension\build\arduino-cli.exe"
+$ArduinoIdePath = "C:\Program Files\arduino-ide"
+$configFolderPath = "$ArduinoIdePath\Appdata"
+$cliPath = "$ArduinoIdePath\resources\app\node_modules\arduino-ide-extension\build\arduino-cli.exe"
 
 $batchFileUrl = 'https://raw.githubusercontent.com/suhsdit/ImmyBot-Scripts/main/Arduino%20IDE/Arduino%20IDE.bat'
 $batchFilePath = 'C:\Program Files\arduino-ide\Arduino IDE.bat'
@@ -56,48 +57,48 @@ if ($batchShortcutExists) {
     Write-Host "X Shortcut to batch file does not exist on public desktop" -ForegroundColor Red
 }
 
-# Check firewall rule for Arduino IDE UDP inbound
-$ArduinoUDPFirewallruleIn = Get-NetFirewallRule -DisplayName "Arduino IDE UDP inbound"
-if ($ArduinoUDPFirewallruleIn.Enabled) {
-    Write-Host "√ Windows Defender Firewall allows Arduino IDE UDP inbound" -ForegroundColor Green
-} else {
-    Write-Host "X Windows Defender Firewall does not allow Arduino IDE UDP inbound" -ForegroundColor Red
-}
+# # Check firewall rule for Arduino IDE UDP inbound
+# $ArduinoUDPFirewallruleIn = Get-NetFirewallRule -DisplayName "Arduino IDE UDP inbound"
+# if ($ArduinoUDPFirewallruleIn.Enabled) {
+#     Write-Host "√ Windows Defender Firewall allows Arduino IDE UDP inbound" -ForegroundColor Green
+# } else {
+#     Write-Host "X Windows Defender Firewall does not allow Arduino IDE UDP inbound" -ForegroundColor Red
+# }
 
-# Check firewall rule for Arduino IDE TCP inbound
-$ArduinoTCPFirewallruleIn = Get-NetFirewallRule -DisplayName "Arduino IDE TCP inbound"
-if ($ArduinoTCPFirewallruleIn.Enabled) {
-    Write-Host "√ Windows Defender Firewall allows Arduino IDE TCP inbound" -ForegroundColor Green
-} else {
-    Write-Host "X Windows Defender Firewall does not allow Arduino IDE TCP inbound" -ForegroundColor Red
-}
+# # Check firewall rule for Arduino IDE TCP inbound
+# $ArduinoTCPFirewallruleIn = Get-NetFirewallRule -DisplayName "Arduino IDE TCP inbound"
+# if ($ArduinoTCPFirewallruleIn.Enabled) {
+#     Write-Host "√ Windows Defender Firewall allows Arduino IDE TCP inbound" -ForegroundColor Green
+# } else {
+#     Write-Host "X Windows Defender Firewall does not allow Arduino IDE TCP inbound" -ForegroundColor Red
+# }
 
-# Check firewall rule for mdns-discovery UDP inbound
-$mdnsUDPFirewallruleIn = Get-NetFirewallRule -DisplayName "mdns-discovery UDP inbound"
-if ($mdnsUDPFirewallruleIn.Enabled) {
-    Write-Host "√ Windows Defender Firewall allows mdns-discovery UDP inbound" -ForegroundColor Green
-} else {
-    Write-Host "X Windows Defender Firewall does not allow mdns-discovery UDP inbound" -ForegroundColor Red
-}
+# # Check firewall rule for mdns-discovery UDP inbound
+# $mdnsUDPFirewallruleIn = Get-NetFirewallRule -DisplayName "mdns-discovery UDP inbound"
+# if ($mdnsUDPFirewallruleIn.Enabled) {
+#     Write-Host "√ Windows Defender Firewall allows mdns-discovery UDP inbound" -ForegroundColor Green
+# } else {
+#     Write-Host "X Windows Defender Firewall does not allow mdns-discovery UDP inbound" -ForegroundColor Red
+# }
 
-# Check firewall rule for mdns-discovery UDP inbound
-$mdnsTCPFirewallruleIn = Get-NetFirewallRule -DisplayName "mdns-discovery TCP inbound"
-if ($mdnsTCPFirewallruleIn.Enabled) {
-    Write-Host "√ Windows Defender Firewall allows mdns-discovery TCP inbound" -ForegroundColor Green
-} else {
-    Write-Host "X Windows Defender Firewall does not allow mdns-discovery TCP inbound" -ForegroundColor Red
-}
+# # Check firewall rule for mdns-discovery UDP inbound
+# $mdnsTCPFirewallruleIn = Get-NetFirewallRule -DisplayName "mdns-discovery TCP inbound"
+# if ($mdnsTCPFirewallruleIn.Enabled) {
+#     Write-Host "√ Windows Defender Firewall allows mdns-discovery TCP inbound" -ForegroundColor Green
+# } else {
+#     Write-Host "X Windows Defender Firewall does not allow mdns-discovery TCP inbound" -ForegroundColor Red
+# }
 
 # Check if certificate is installed
-# $ArduinoSrlCert = Get-ChildItem -Path Cert:\LocalMachine\TrustedPublisher | Where-Object {$_.Subject -like "*Arduino SRL*"}
-# $ArduinoLlcCert = Get-ChildItem -Path Cert:\LocalMachine\TrustedPublisher | Where-Object {$_.Subject -like "*Arduino LLC*"}
-# $ArduinoSaCert = Get-ChildItem -Path Cert:\LocalMachine\TrustedPublisher | Where-Object {$_.Subject -like "*Arduino SA*"}
-# $AdafruitCert = Get-ChildItem -Path Cert:\LocalMachine\TrustedPublisher | Where-Object {$_.Subject -like "*Adafruit*"}
-# if ($ArduinoSrlCert -and $ArduinoLlcCert -and $ArduinoSaCert -and $AdafruitCert) {
-#     Write-Host "√ Arduino certificates are installed" -ForegroundColor Green
-# } else {
-#     Write-Host "X Arduino certificates are not installed" -ForegroundColor Red
-# }
+$ArduinoSrlCert = Get-ChildItem -Path Cert:\LocalMachine\TrustedPublisher | Where-Object {$_.Subject -like "*Arduino SRL*"}
+$ArduinoLlcCert = Get-ChildItem -Path Cert:\LocalMachine\TrustedPublisher | Where-Object {$_.Subject -like "*Arduino LLC*"}
+$ArduinoSaCert = Get-ChildItem -Path Cert:\LocalMachine\TrustedPublisher | Where-Object {$_.Subject -like "*Arduino SA*"}
+$AdafruitCert = Get-ChildItem -Path Cert:\LocalMachine\TrustedPublisher | Where-Object {$_.Subject -like "*Adafruit*"}
+if ($ArduinoSrlCert -and $ArduinoLlcCert -and $ArduinoSaCert -and $AdafruitCert) {
+    Write-Host "√ Arduino certificates are installed" -ForegroundColor Green
+} else {
+    Write-Host "X Arduino certificates are not installed" -ForegroundColor Red
+}
 
 
 switch ($method) {

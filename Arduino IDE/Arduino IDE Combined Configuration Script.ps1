@@ -109,6 +109,8 @@ switch ($method) {
             $coreBoardsInstalled -and
             !$originalShortcutExists -and
             $batchShortcutExists -and
+            !$originalStartMenuShortcutExists -and
+            $batchStartMenuShortcutExists -and
             #firewall rules
             $ArduinoUDPFirewallruleIn -and $ArduinoTCPFirewallruleIn -and
             $mdnsUDPFirewallruleIn -and $mdnsTCPFirewallruleIn -and

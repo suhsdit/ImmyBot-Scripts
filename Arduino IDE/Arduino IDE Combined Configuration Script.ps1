@@ -92,8 +92,8 @@ switch ($method) {
             !$originalShortcutExists -and
             $batchShortcutExists -and
             #firewall rules
-            $ArduinoUDPFirewallruleIn.Enabled -and $ArduinoTCPFirewallruleIn.Enabled -and
-            $mdnsUDPFirewallruleIn.Enabled -and $mdnsTCPFirewallruleIn.Enabled -and
+            $ArduinoUDPFirewallruleIn -and $ArduinoTCPFirewallruleIn -and
+            $mdnsUDPFirewallruleIn -and $mdnsTCPFirewallruleIn -and
             #certs
             $ArduinoSrlCert -and $ArduinoLlcCert -and $ArduinoSaCert -and $AdafruitCert
             ) {

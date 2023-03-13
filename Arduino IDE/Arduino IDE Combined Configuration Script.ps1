@@ -4,6 +4,7 @@ $cliPath = "$ArduinoIdePath\resources\app\node_modules\arduino-ide-extension\bui
 
 $batchFileUrl = 'https://raw.githubusercontent.com/suhsdit/ImmyBot-Scripts/main/Arduino%20IDE/Arduino%20IDE.bat'
 $batchFilePath = 'C:\Program Files\arduino-ide\Arduino IDE.bat'
+$shortcutFileUrl = 'https://github.com/suhsdit/ImmyBot-Scripts/raw/main/Arduino%20IDE/Arduino-IDE.lnk'
 
 $yamlFileUrl = 'https://raw.githubusercontent.com/suhsdit/ImmyBot-Scripts/main/Arduino%20IDE/arduino-cli.yaml'
 $yamlFilePath = "C:\Program Files\arduino-ide\Appdata\arduino-cli.yaml"
@@ -56,6 +57,23 @@ if ($batchShortcutExists) {
 } else {
     Write-Host "X Shortcut to batch file does not exist on public desktop" -ForegroundColor Red
 }
+
+# Check if start menu shortcut exists for Arduino IDE
+$originalStartMenuShortcutExists = Test-Path "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Arduino IDE.lnk"
+if ($originalStartMenuShortcutExists) {
+    Write-Host "X Shortcut is not removed from start menu" -ForegroundColor Red
+} else {
+    Write-Host "√ Shortcut is removed from start menu" -ForegroundColor Green
+}
+
+# Check if start menu shortcut exists for Arduino IDE batch file
+$batchStartMenuShortcutExists = Test-Path "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Arduino-IDE.lnk"
+if ($batchStartMenuShortcutExists) {
+    Write-Host "√ Shortcut to batch file exists in start menu" -ForegroundColor Green
+} else {
+    Write-Host "X Shortcut to batch file does not exist in start menu" -ForegroundColor Red
+}
+
 
 # Check firewall rules
 $ArduinoUDPFirewallruleIn = (Get-NetFirewallRule -DisplayName "Arduino IDE UDP inbound").Enabled
@@ -141,10 +159,24 @@ switch ($method) {
             Remove-Item "$env:PUBLIC\Desktop\Arduino IDE.lnk"
         }
 
+        # If original start menu shortcut exists, delete it
+        if ($originalStartMenuShortcutExists) {
+            Write-Host "Deleting original start menu shortcut"
+            Remove-Item "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Arduino IDE.lnk"
+        }
+
         # If the batch file does not exist, download it
         if (-not $batchShortcutExists) {
             Write-Host "Downloading batch file"
             Invoke-WebRequest -Uri $batchFileUrl -OutFile $batchFilePath
+        }
+
+        # If Start Menu shortcut to the batch file does not exist, create it
+        if (-not $batchStartMenuShortcutExists) {
+            Write-Host "Creating shortcut to batch file in start menu"
+            
+            # download arduino ide shortcut from github
+            Invoke-WebRequest -Uri $shortcutFileUrl -OutFile "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Arduino-IDE.lnk"
         }
 
         # If the shortcut to the batch file does not exist, create it
@@ -152,7 +184,6 @@ switch ($method) {
             Write-Host "Creating shortcut to batch file"
             
             # download arduino ide shortcut from github
-            $shortcutFileUrl = 'https://github.com/suhsdit/ImmyBot-Scripts/raw/main/Arduino%20IDE/Arduino-IDE.lnk'
             Invoke-WebRequest -Uri $shortcutFileUrl -OutFile "$env:PUBLIC\Desktop\Arduino-IDE.lnk"
         }
 

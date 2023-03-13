@@ -92,7 +92,8 @@ switch ($method) {
             !$originalShortcutExists -and
             $batchShortcutExists -and
             #firewall rules
-            #$FirewallruleIn.Enabled -and $FirewallruleOut.Enabled -and
+            $ArduinoUDPFirewallruleIn.Enabled -and $ArduinoTCPFirewallruleIn.Enabled -and
+            $mdnsUDPFirewallruleIn.Enabled -and $mdnsTCPFirewallruleIn.Enabled -and
             #certs
             $ArduinoSrlCert -and $ArduinoLlcCert -and $ArduinoSaCert -and $AdafruitCert
             ) {
@@ -146,47 +147,23 @@ switch ($method) {
             Invoke-WebRequest -Uri $batchFileUrl -OutFile $batchFilePath
         }
 
-        # If the shortcut to the batch file does not exist, create it using arduino ide icon
+        # If the shortcut to the batch file does not exist, create it
         if (-not $batchShortcutExists) {
             Write-Host "Creating shortcut to batch file"
-            # Create a System.Drawing.Icon object from the executable file
-            Add-Type -AssemblyName System.Drawing
-
-            # Extract the associated icon from the executable file
-            $icon = [System.Drawing.Icon]::ExtractAssociatedIcon("$arduinoIdePath\Arduino IDE.exe")
-
-            # Save icon
-            $icon.Save("$arduinoIdePath\Arduino IDE.ico")
-
-            # Create a WScript.Shell COM object
-            $shell = New-Object -ComObject WScript.Shell
-
-            # Get the shortcut object
-            $shortcut = $shell.CreateShortcut("$env:PUBLIC\Desktop\Arduino-IDE.lnk")
-
-            # Set the target path and arguments of the shortcut
-            $shortcut.TargetPath = $batchFilePath
-
-            # Set the icon location and index of the shortcut
-            $shortcut.IconLocation = $icon.Location
-            $shortcut.IconIndex = $icon.IconIndex
-
-            # Save the shortcut changes
-            $shortcut.Save()
-
-            # Get shortcut target path of Arduino IDE.lnk
             
-
-
-
+            # download arduino ide shortcut from github
+            $shortcutFileUrl = 'https://github.com/suhsdit/ImmyBot-Scripts/raw/main/Arduino%20IDE/Arduino-IDE.lnk'
+            Invoke-WebRequest -Uri $shortcutFileUrl -OutFile "$env:PUBLIC\Desktop\Arduino-IDE.lnk"
+        }
 
         # If inbound firewall rules are not created, create them
-        if ($mdnsTCPFirewallruleIn -and $mdnsUDPFirewallruleIn -and $ArduinoTCPFirewallruleIn -and $ArduinoUDPFirewallruleIn) {
+        if (-not $mdnsTCPFirewallruleIn -and -not $mdnsUDPFirewallruleIn -and -not $ArduinoTCPFirewallruleIn -and -not $ArduinoUDPFirewallruleIn) {
             Write-Host "Creating inbound firewall rules"
             New-NetFirewallRule -DisplayName "Arduino IDE TCP inbound" -Direction Inbound -Action Allow -Protocol TCP -Program "C:\Program Files\Arduino-ide\arduino ide.exe"
             New-NetFirewallRule -DisplayName "Arduino IDE UDP inbound" -Direction Inbound -Action Allow -Protocol UDP -Program "C:\Program Files\Arduino-ide\arduino ide.exe"
             New-NetFirewallRule -DisplayName "mdns-discovery UDP inbound" -Direction Inbound -Action Allow -Protocol UDP -Program "C:\program files\arduino-ide\appdata\local\arduino15\packages\builtin\tools\mdns-discovery\1.0.8\mdns-discovery.exe"
-            New-NetFirewallRule -DisplayName "mdns-discovery TCP inbound" -Direction Inbound -Action Allow -Protocol TCP -Program "C:\program files\arduino-ide\appdata\local\arduino15\packages\builtin\tools\mdns-discovery\1.0.8\mdns-discovery.exe"        
+            New-NetFirewallRule -DisplayName "mdns-discovery TCP inbound" -Direction Inbound -Action Allow -Protocol TCP -Program "C:\program files\arduino-ide\appdata\local\arduino15\packages\builtin\tools\mdns-discovery\1.0.8\mdns-discovery.exe"
+        }
 
         # If certificates are not installed, install them
         if (-not $ArduinoSrlCert -and -not $ArduinoLlcCert -and -not $ArduinoSaCert -and -not $AdafruitCert) {
@@ -207,8 +184,6 @@ switch ($method) {
                 certutil -addstore -f "TrustedPublisher" "$certPath\$cert"
             }
         }
-
-        
         return
     }
     "get" {

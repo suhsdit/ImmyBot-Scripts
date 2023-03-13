@@ -34,7 +34,7 @@ if ($configFileExists) {
 }
 
 # Check if core boards are installed using & $cliPath core list
-$coreBoardsInstalled = & $cliPath core list | Select-String -Pattern "arduino:avr"
+$coreBoardsInstalled = & $cliPath core list  --config-file $yamlFilePath | Select-String -Pattern "arduino:avr"
 if ($coreBoardsInstalled) {
     Write-Host "√ Core boards are installed" -ForegroundColor Green
 } else {
@@ -113,7 +113,7 @@ switch ($method) {
             !$originalShortcutExists -and
             $batchShortcutExists -and
             #firewall rules
-            $FirewallruleIn.Enabled -and $FirewallruleOut.Enabled -and
+            #$FirewallruleIn.Enabled -and $FirewallruleOut.Enabled -and
             #certs
             $ArduinoSrlCert -and $ArduinoLlcCert -and $ArduinoSaCert -and $AdafruitCert
             ) {

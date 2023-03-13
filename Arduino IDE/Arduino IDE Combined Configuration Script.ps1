@@ -57,37 +57,16 @@ if ($batchShortcutExists) {
     Write-Host "X Shortcut to batch file does not exist on public desktop" -ForegroundColor Red
 }
 
-# # Check firewall rule for Arduino IDE UDP inbound
-# $ArduinoUDPFirewallruleIn = Get-NetFirewallRule -DisplayName "Arduino IDE UDP inbound"
-# if ($ArduinoUDPFirewallruleIn.Enabled) {
-#     Write-Host "√ Windows Defender Firewall allows Arduino IDE UDP inbound" -ForegroundColor Green
-# } else {
-#     Write-Host "X Windows Defender Firewall does not allow Arduino IDE UDP inbound" -ForegroundColor Red
-# }
-
-# # Check firewall rule for Arduino IDE TCP inbound
-# $ArduinoTCPFirewallruleIn = Get-NetFirewallRule -DisplayName "Arduino IDE TCP inbound"
-# if ($ArduinoTCPFirewallruleIn.Enabled) {
-#     Write-Host "√ Windows Defender Firewall allows Arduino IDE TCP inbound" -ForegroundColor Green
-# } else {
-#     Write-Host "X Windows Defender Firewall does not allow Arduino IDE TCP inbound" -ForegroundColor Red
-# }
-
-# # Check firewall rule for mdns-discovery UDP inbound
-# $mdnsUDPFirewallruleIn = Get-NetFirewallRule -DisplayName "mdns-discovery UDP inbound"
-# if ($mdnsUDPFirewallruleIn.Enabled) {
-#     Write-Host "√ Windows Defender Firewall allows mdns-discovery UDP inbound" -ForegroundColor Green
-# } else {
-#     Write-Host "X Windows Defender Firewall does not allow mdns-discovery UDP inbound" -ForegroundColor Red
-# }
-
-# # Check firewall rule for mdns-discovery UDP inbound
-# $mdnsTCPFirewallruleIn = Get-NetFirewallRule -DisplayName "mdns-discovery TCP inbound"
-# if ($mdnsTCPFirewallruleIn.Enabled) {
-#     Write-Host "√ Windows Defender Firewall allows mdns-discovery TCP inbound" -ForegroundColor Green
-# } else {
-#     Write-Host "X Windows Defender Firewall does not allow mdns-discovery TCP inbound" -ForegroundColor Red
-# }
+# Check firewall rules
+$ArduinoUDPFirewallruleIn = (Get-NetFirewallRule -DisplayName "Arduino IDE UDP inbound").Enabled
+$ArduinoTCPFirewallruleIn = (Get-NetFirewallRule -DisplayName "Arduino IDE TCP inbound").Enabled
+$mdnsUDPFirewallruleIn = (Get-NetFirewallRule -DisplayName "mdns-discovery UDP inbound").Enabled
+$mdnsTCPFirewallruleIn = (Get-NetFirewallRule -DisplayName "mdns-discovery TCP inbound").Enabled
+if ($mdnsTCPFirewallruleIn -and $mdnsUDPFirewallruleIn -and $ArduinoTCPFirewallruleIn -and $ArduinoUDPFirewallruleIn) {
+    Write-Host "√ Windows Defender Firewall rules exist" -ForegroundColor Green
+} else {
+    Write-Host "X Windows Defender Firewall rules do not exist" -ForegroundColor Red
+}
 
 # Check if certificate is installed
 $ArduinoSrlCert = Get-ChildItem -Path Cert:\LocalMachine\TrustedPublisher | Where-Object {$_.Subject -like "*Arduino SRL*"}
@@ -170,27 +149,44 @@ switch ($method) {
         # If the shortcut to the batch file does not exist, create it using arduino ide icon
         if (-not $batchShortcutExists) {
             Write-Host "Creating shortcut to batch file"
-            $wshShell = New-Object -ComObject WScript.Shell
-            $shortcut = $wshShell.CreateShortcut("$env:PUBLIC\Desktop\Arduino-IDE.lnk")
+            # Create a System.Drawing.Icon object from the executable file
+            Add-Type -AssemblyName System.Drawing
+
+            # Extract the associated icon from the executable file
+            $icon = [System.Drawing.Icon]::ExtractAssociatedIcon("$arduinoIdePath\Arduino IDE.exe")
+
+            # Save icon
+            $icon.Save("$arduinoIdePath\Arduino IDE.ico")
+
+            # Create a WScript.Shell COM object
+            $shell = New-Object -ComObject WScript.Shell
+
+            # Get the shortcut object
+            $shortcut = $shell.CreateShortcut("$env:PUBLIC\Desktop\Arduino-IDE.lnk")
+
+            # Set the target path and arguments of the shortcut
             $shortcut.TargetPath = $batchFilePath
-            $shortcut.IconLocation = "C:\Program Files\arduino-ide\resources\app\static\icons\arduino.ico"
+
+            # Set the icon location and index of the shortcut
+            $shortcut.IconLocation = $icon.Location
+            $shortcut.IconIndex = $icon.IconIndex
+
+            # Save the shortcut changes
             $shortcut.Save()
-        }
 
-        # If inbound tcp/udp Firewall rules are not created for Arduino IDE and mdns, create them for each exe
-        # if (-not $ArduinoUDPFirewallruleIn.Enabled -and -not $ArduinoTCPFirewallruleIn.Enabled) {
-        #     Write-Host "Creating inbound and outbound firewall rules for Arduino IDE"
-        #     New-NetFirewallRule -DisplayName "Arduino IDE UDP inbound" -Direction Inbound -Action Allow -Protocol UDP -LocalPort 5000 -Program "C:\Program Files\Arduino-ide\arduino ide.exe"
-        #     New-NetFirewallRule -DisplayName "Arduino IDE TCP inbound" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 5000 -Program "C:\Program Files\Arduino-ide\arduino ide.exe"
-        # }
+            # Get shortcut target path of Arduino IDE.lnk
+            
 
-        # if (-not $mdnsUDPFirewallruleIn.Enabled -and -not $mdnsTCPFirewallruleIn.Enabled) {
-        #     Write-Host "Creating inbound firewall rules for mdns-discovery"
-        #     #New-NetFirewallRule -DisplayName "mdns-discovery UDP inbound" -Direction Inbound -Action Allow -Protocol UDP -LocalPort 5353 -Program "$($cliPath.Replace('arduino-cli.exe', 'mdns-discovery.exe'))"
-        #     #New-NetFirewallRule -DisplayName "mdns-discovery TCP inbound" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 5353 -Program "$($cliPath.Replace('arduino-cli.exe', 'mdns-discovery.exe'))"
-        # }
 
-        
+
+
+        # If inbound firewall rules are not created, create them
+        if ($mdnsTCPFirewallruleIn -and $mdnsUDPFirewallruleIn -and $ArduinoTCPFirewallruleIn -and $ArduinoUDPFirewallruleIn) {
+            Write-Host "Creating inbound firewall rules"
+            New-NetFirewallRule -DisplayName "Arduino IDE TCP inbound" -Direction Inbound -Action Allow -Protocol TCP -Program "C:\Program Files\Arduino-ide\arduino ide.exe"
+            New-NetFirewallRule -DisplayName "Arduino IDE UDP inbound" -Direction Inbound -Action Allow -Protocol UDP -Program "C:\Program Files\Arduino-ide\arduino ide.exe"
+            New-NetFirewallRule -DisplayName "mdns-discovery UDP inbound" -Direction Inbound -Action Allow -Protocol UDP -Program "C:\program files\arduino-ide\appdata\local\arduino15\packages\builtin\tools\mdns-discovery\1.0.8\mdns-discovery.exe"
+            New-NetFirewallRule -DisplayName "mdns-discovery TCP inbound" -Direction Inbound -Action Allow -Protocol TCP -Program "C:\program files\arduino-ide\appdata\local\arduino15\packages\builtin\tools\mdns-discovery\1.0.8\mdns-discovery.exe"        
 
         # If certificates are not installed, install them
         if (-not $ArduinoSrlCert -and -not $ArduinoLlcCert -and -not $ArduinoSaCert -and -not $AdafruitCert) {

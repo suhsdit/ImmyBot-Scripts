@@ -1,0 +1,1 @@
+(Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{f678f9cf-aa61-4a3d-bb61-5b74756e73d6}_is1").DisplayName.Split(' ')[-1]

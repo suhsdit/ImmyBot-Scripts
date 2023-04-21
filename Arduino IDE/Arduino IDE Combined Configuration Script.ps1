@@ -17,6 +17,16 @@ $certs = @(
     'arduinosrl.cer'
 )
 
+function Get-ContentHash {
+    param(
+        [string]$Content
+    )
+    $hashAlgorithm = [System.Security.Cryptography.SHA256]::Create()
+    $contentBytes = [System.Text.Encoding]::UTF8.GetBytes($Content)
+    $hashBytes = $hashAlgorithm.ComputeHash($contentBytes)
+    return [System.BitConverter]::ToString($hashBytes).Replace("-", "")
+}
+
 
 #Test if config folder exists with proper permissions
 $configFolderExists = Test-Path $configFolderPath
@@ -30,8 +40,26 @@ if ($configFolderExists) {
 $configFileExists = Test-Path $yamlFilePath
 if ($configFileExists) {
     Write-Host "√ YAML file exists in config folder" -ForegroundColor Green
+
+    # Check if hash of yaml file on disk matches hash of yaml file on github
+    $yamlFileHash = Get-FileHash $yamlFilePath -Algorithm SHA256
+    Write-Host "Local File Hash: $($yamlFileHash.Hash)"
+    $yamlFileContentFromUrl = Invoke-WebRequest -Uri $yamlFileUrl -UseBasicParsing | Select-Object -ExpandProperty Content
+    $yamlFileHashFromUrl = Get-ContentHash -Content $yamlFileContentFromUrl
+    Write-Host "Github File Hash: $yamlFileHashFromURL"
+    $yamlFileMatch = $yamlFileHash.Hash -eq $yamlFileHashFromUrl
 } else {
     Write-Host "X YAML file does not exist in config folder" -ForegroundColor Red
+    
+    # We'll say the hash match is true so we can download the file
+    $yamlFileHash = $true
+}
+
+# Check if yaml file hash matches IF yaml file exists
+if ($yamlFileMatch -and $configFileExists) {
+    Write-Host "√ YAML file hash matches" -ForegroundColor Green
+} else {
+    Write-Host "X YAML file hash does not match" -ForegroundColor Red
 }
 
 # Check if core boards are installed using & $cliPath core list
@@ -106,6 +134,7 @@ switch ($method) {
         # For each of the checks above, if the test fails, return false
         if ($configFolderExists -and
             $configFileExists -and
+            $yamlFileMatch -and
             $coreBoardsInstalled -and
             !$originalShortcutExists -and
             $batchShortcutExists -and
@@ -144,6 +173,18 @@ switch ($method) {
             Invoke-WebRequest -Uri $yamlFileUrl -OutFile $yamlFilePath
             $acl = Get-Acl $yamlFilePath
             $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("Everyone","Modify","ContainerInherit,ObjectInherit","None","Allow")
+            $acl.SetAccessRule($rule)
+            Set-Acl $yamlFilePath $acl
+            attrib +h $yamlFilePath
+        }
+
+        # If the yaml file does not match, replace it
+        if (-not $yamlFileMatch) {
+            Write-Host "Replacing YAML file"
+            Remove-Item $yamlFilePath -Force
+            Invoke-WebRequest -Uri $yamlFileUrl -OutFile $yamlFilePath
+            $acl = Get-Acl $yamlFilePath
+            $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("Everyone", "Modify", "ContainerInherit, ObjectInherit", "None", "Allow")
             $acl.SetAccessRule($rule)
             Set-Acl $yamlFilePath $acl
             attrib +h $yamlFilePath
